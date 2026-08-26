@@ -1,0 +1,15 @@
+import express from 'express';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import dotenv from 'dotenv';
+import authRoutes from './routes/authRoutes.js';
+import issueRoutes from './routes/issueRoutes.js';
+dotenv.config();
+const app=express(),PORT=process.env.PORT||5000;
+app.use(cors({origin:process.env.FRONTEND_URL||'http://localhost:5173'}));
+app.use(express.json({limit:'2mb'}));
+app.use(rateLimit({windowMs:15*60*1000,limit:300}));
+app.get('/api/health',(req,res)=>res.json({ok:true,service:'CiviFix API'}));
+app.use('/api/auth',authRoutes);app.use('/api/issues',issueRoutes);
+app.use((req,res)=>res.status(404).json({error:'Route not found'}));
+app.listen(PORT,()=>console.log(`CiviFix API: http://localhost:${PORT}`));
