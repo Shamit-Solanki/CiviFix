@@ -137,10 +137,23 @@ function App() {
             {issues.length ? (
               <div className="issue-grid">
                 {issues.map(issue => (
-                  <IssueCard
-                    key={issue.id}
-                    issue={issue}
-                  />
+                    <IssueCard
+                        key={issue.id}
+                        issue={issue}
+                        onSupported={(id, data) => {
+                        setIssues(current =>
+                            current.map(item =>
+                            item.id === id
+                                ? {
+                                    ...item,
+                                    supporter_count: data.supporterCount,
+                                    priority_score: data.priorityScore
+                                }
+                                : item
+                            )
+                        );
+                        }}
+                    />
                 ))}
               </div>
             ) : (
@@ -597,14 +610,58 @@ function Navbar({
    ISSUE CARD
 ========================= */
 
-function IssueCard({ issue }) {
+function IssueCard({ issue, onSupported }) {
+  const [supporting, setSupporting] = useState(false);
+  const [error, setError] = useState('');
+
+  async function supportIssue() {
+    const token = localStorage.getItem('civifix_token');
+
+    if (!token) {
+      setError('Please log in to support an issue.');
+      return;
+    }
+
+    try {
+      setSupporting(true);
+      setError('');
+
+      const res = await fetch(
+        `${API}/issues/${issue.id}/support`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(
+          data.error || 'Could not support this issue.'
+        );
+        return;
+      }
+
+      onSupported(issue.id, data);
+
+    } catch (err) {
+      console.error(err);
+      setError('Could not connect to CiviFix.');
+    } finally {
+      setSupporting(false);
+    }
+  }
+
   return (
     <article className="issue-card">
 
       <div className="issue-card-top">
 
         <span className="category">
-          {issue.category || 'Civic issue'}
+          Civic issue
         </span>
 
         <span className="issue-id">
@@ -636,6 +693,26 @@ function IssueCard({ issue }) {
         </span>
 
       </div>
+
+      <button
+        className="support-btn"
+        onClick={supportIssue}
+        disabled={supporting}
+      >
+        {supporting
+          ? 'Supporting...'
+          : "I'm affected by this"}
+
+        <span>
+          {supporting ? '...' : '↗'}
+        </span>
+      </button>
+
+      {error && (
+        <div className="support-error">
+          {error}
+        </div>
+      )}
 
     </article>
   );

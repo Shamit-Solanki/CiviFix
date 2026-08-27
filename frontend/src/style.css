@@ -1873,3 +1873,40 @@ footer strong {
 .photo-preview-actions button:hover {
   text-decoration: underline;
 }
+.support-btn {
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 12px;
+  background: #172033;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  transition: 0.2s ease;
+}
+
+.support-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.support-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.support-error {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: #fff0f0;
+  color: #b42318;
+  font-size: 12px;
+}
