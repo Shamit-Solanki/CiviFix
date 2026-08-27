@@ -22,13 +22,15 @@ export default function ReportIssue({ onBack }) {
     title: '',
     description: '',
     departmentId: '',
-    severity: 3,
-    imageUrl: ''
+    severity: 3
   });
 
   const [location, setLocation] = useState(null);
   const [locationStatus, setLocationStatus] =
     useState('Detecting your location...');
+
+  const [photo, setPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -72,6 +74,38 @@ export default function ReportIssue({ onBack }) {
     }));
   }
 
+  function handlePhoto(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be smaller than 5 MB.');
+      return;
+    }
+
+    setError('');
+    setPhoto(file);
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setPhotoPreview(reader.result);
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  function removePhoto() {
+    setPhoto(null);
+    setPhotoPreview('');
+  }
+
   async function submit(e) {
     e.preventDefault();
 
@@ -105,6 +139,16 @@ export default function ReportIssue({ onBack }) {
         return;
       }
 
+      /*
+       * For now the selected image is converted to a data URL.
+       * This is suitable for our prototype.
+       */
+      let imageUrl = null;
+
+      if (photo) {
+        imageUrl = photoPreview;
+      }
+
       const response = await fetch(
         `${API}/issues`,
         {
@@ -115,12 +159,14 @@ export default function ReportIssue({ onBack }) {
           },
           body: JSON.stringify({
             title: form.title.trim(),
-            description: form.description.trim() || null,
-            departmentId: Number(form.departmentId),
+            description:
+              form.description.trim() || null,
+            departmentId:
+              Number(form.departmentId),
             latitude: location.latitude,
             longitude: location.longitude,
             severity: Number(form.severity),
-            imageUrl: form.imageUrl.trim() || null
+            imageUrl
           })
         }
       );
@@ -147,10 +193,6 @@ export default function ReportIssue({ onBack }) {
       setLoading(false);
     }
   }
-
-  /* =========================
-     SUCCESS SCREEN
-  ========================= */
 
   if (result) {
     const department =
@@ -260,10 +302,6 @@ export default function ReportIssue({ onBack }) {
     );
   }
 
-  /* =========================
-     REPORT FORM
-  ========================= */
-
   return (
     <div className="report-page">
 
@@ -317,22 +355,17 @@ export default function ReportIssue({ onBack }) {
           onSubmit={submit}
         >
 
-          {/* 01 — PROBLEM */}
-
           <div className="form-section">
 
             <div className="form-section-heading">
-
               <span>01</span>
 
               <div>
                 <h2>Describe the problem</h2>
-
                 <p>
                   Explain what you saw in your own words.
                 </p>
               </div>
-
             </div>
 
             <label>
@@ -370,23 +403,21 @@ export default function ReportIssue({ onBack }) {
           </div>
 
 
-          {/* 02 — AUTHORITY */}
-
           <div className="form-section">
 
             <div className="form-section-heading">
-
               <span>02</span>
 
               <div>
-                <h2>Choose the responsible authority</h2>
+                <h2>
+                  Choose the responsible authority
+                </h2>
 
                 <p>
                   Point your report toward the department
                   that should handle the problem.
                 </p>
               </div>
-
             </div>
 
             <label>
@@ -422,12 +453,9 @@ export default function ReportIssue({ onBack }) {
           </div>
 
 
-          {/* 03 — LOCATION */}
-
           <div className="form-section">
 
             <div className="form-section-heading">
-
               <span>03</span>
 
               <div>
@@ -438,7 +466,6 @@ export default function ReportIssue({ onBack }) {
                   to help identify exactly where the problem is.
                 </p>
               </div>
-
             </div>
 
             <div
@@ -474,12 +501,9 @@ export default function ReportIssue({ onBack }) {
           </div>
 
 
-          {/* 04 — SEVERITY */}
-
           <div className="form-section">
 
             <div className="form-section-heading">
-
               <span>04</span>
 
               <div>
@@ -490,7 +514,6 @@ export default function ReportIssue({ onBack }) {
                   when determining issue priority.
                 </p>
               </div>
-
             </div>
 
             <div className="severity-options">
@@ -531,66 +554,79 @@ export default function ReportIssue({ onBack }) {
           </div>
 
 
-          {/* 05 — PHOTO */}
+          {/* REAL PHOTO UPLOAD */}
 
           <div className="form-section">
 
             <div className="form-section-heading">
-
               <span>05</span>
 
               <div>
-                <h2>Add evidence</h2>
+                <h2>Add a photo</h2>
 
                 <p>
-                  A photo can help authorities understand
-                  the issue faster.
+                  A photo helps authorities understand
+                  the problem faster.
                 </p>
               </div>
-
             </div>
 
-            <label>
-              Image URL
-            </label>
+            {!photoPreview ? (
 
-            <input
-              type="url"
-              value={form.imageUrl}
-              onChange={e =>
-                update(
-                  'imageUrl',
-                  e.target.value
-                )
-              }
-              placeholder="Paste an image URL for now"
-            />
+              <label className="photo-upload">
 
-            <div className="photo-input">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handlePhoto}
+                  hidden
+                />
 
-              <div className="photo-icon">
-                +
-              </div>
-
-              <div>
+                <div className="photo-upload-icon">
+                  +
+                </div>
 
                 <strong>
-                  Photo upload coming next
+                  Take a photo or choose one
                 </strong>
 
                 <small>
-                  We'll connect CiviFix to image storage
-                  after the core reporting flow works.
+                  JPG, PNG or other image · Maximum 5 MB
                 </small>
+
+              </label>
+
+            ) : (
+
+              <div className="photo-preview">
+
+                <img
+                  src={photoPreview}
+                  alt="Selected evidence"
+                />
+
+                <div className="photo-preview-actions">
+
+                  <strong>
+                    {photo?.name}
+                  </strong>
+
+                  <button
+                    type="button"
+                    onClick={removePhoto}
+                  >
+                    Remove photo
+                  </button>
+
+                </div>
 
               </div>
 
-            </div>
+            )}
 
           </div>
 
-
-          {/* SUBMIT */}
 
           <div className="report-submit">
 
