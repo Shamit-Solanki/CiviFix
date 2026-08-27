@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './style.css';
+import ReportIssue from './ReportIssue.jsx';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -113,8 +114,11 @@ function App() {
               </p>
             </div>
 
-            <button className="primary-btn">
-              <span>+</span> Report an issue
+            <button
+                className="primary-btn"
+                onClick={() => setPage('report')}
+            >
+            <span>+</span> Report an issue
             </button>
           </div>
 
@@ -153,6 +157,16 @@ function App() {
       </div>
     );
   }
+  if (page === 'report') {
+  return (
+    <div className={darkMode ? 'app dark-mode' : 'app'}>
+      <ReportIssue
+        user={user}
+        onBack={() => setPage('dashboard')}
+      />
+    </div>
+  );
+}
 
   return (
     <div className={darkMode ? 'app dark-mode' : 'app'}>
@@ -187,7 +201,13 @@ function App() {
 
               <button
                 className="primary-btn large"
-                onClick={() => setPage('register')}
+                onClick={() => {
+                    if (user) {
+                        setPage('report');
+                    } else {
+                        setPage('register');
+                    }
+                }}
               >
                 Report a problem
                 <span className="arrow">↗</span>

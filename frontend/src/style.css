@@ -1406,3 +1406,391 @@ footer strong {
   background: white;
   color: #101828;
 }
+/* =========================
+   REPORT PAGE
+========================= */
+
+.report-page {
+  min-height: 100vh;
+  background: var(--light);
+}
+
+.report-container {
+  width: min(900px, 92%);
+  margin: 0 auto;
+  padding: 80px 0 120px;
+}
+
+.report-heading {
+  max-width: 680px;
+  margin-bottom: 55px;
+}
+
+.report-heading h1 {
+  font-size: clamp(44px, 7vw, 72px);
+  line-height: .98;
+  margin: 14px 0 20px;
+  letter-spacing: -3px;
+}
+
+.report-heading p {
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.7;
+  max-width: 620px;
+}
+
+.report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-section {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 15px 45px rgba(16,24,40,.04);
+}
+
+.form-section-heading {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.form-section-heading > span {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--blue);
+}
+
+.form-section-heading h2 {
+  margin: 0 0 7px;
+  font-size: 22px;
+}
+
+.form-section-heading p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.form-section label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 20px 0 8px;
+}
+
+.form-section input,
+.form-section textarea,
+.form-section select {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--light);
+  color: var(--ink);
+  border-radius: 13px;
+  padding: 14px 16px;
+  font: inherit;
+  outline: none;
+  transition: .2s ease;
+}
+
+.form-section textarea {
+  resize: vertical;
+  min-height: 130px;
+}
+
+.form-section input:focus,
+.form-section textarea:focus,
+.form-section select:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(80,110,255,.1);
+}
+
+.photo-input {
+  border: 1.5px dashed var(--border);
+  border-radius: 18px;
+  padding: 25px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  cursor: pointer;
+  transition: .25s ease;
+}
+
+.photo-input:hover {
+  border-color: var(--blue);
+  transform: translateY(-2px);
+}
+
+.photo-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(56,214,193,.12);
+  color: var(--blue);
+  font-size: 28px;
+}
+
+.photo-input strong,
+.photo-input small {
+  display: block;
+}
+
+.photo-input small {
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+.location-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--light);
+  border: 1px solid var(--border);
+}
+
+.location-box.detected {
+  border-color: rgba(56,214,193,.5);
+}
+
+.location-icon {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(56,214,193,.12);
+  color: var(--blue);
+  font-weight: 800;
+}
+
+.location-box strong,
+.location-box small {
+  display: block;
+}
+
+.location-box small {
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+.severity-options {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.severity-option {
+  border: 1px solid var(--border);
+  background: var(--light);
+  color: var(--ink);
+  border-radius: 14px;
+  padding: 16px 8px;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.severity-option strong,
+.severity-option span {
+  display: block;
+}
+
+.severity-option strong {
+  font-size: 20px;
+  margin-bottom: 5px;
+}
+
+.severity-option span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.severity-option:hover {
+  transform: translateY(-2px);
+}
+
+.severity-option.selected {
+  border-color: var(--blue);
+  background: rgba(56,214,193,.1);
+}
+
+.report-submit {
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.report-submit small {
+  color: var(--muted);
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+.report-submit .primary-btn {
+  min-width: 220px;
+}
+
+.primary-btn:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+
+/* SUCCESS */
+
+.report-success {
+  min-height: calc(100vh - 64px);
+  width: min(700px, 92%);
+  margin: 0 auto;
+  padding: 100px 0;
+  text-align: center;
+}
+
+.success-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(56,214,193,.13);
+  color: var(--blue);
+  font-size: 35px;
+  font-weight: 800;
+}
+
+.report-success h1 {
+  font-size: clamp(42px, 7vw, 65px);
+  line-height: 1;
+  letter-spacing: -2px;
+  margin: 15px 0;
+}
+
+.report-success > p {
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.7;
+  max-width: 570px;
+  margin: 0 auto 35px;
+}
+
+.success-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 25px;
+  margin-bottom: 20px;
+}
+
+.success-card span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--blue);
+}
+
+.success-card strong {
+  font-size: 20px;
+  margin: 10px 0;
+}
+
+.success-card small {
+  color: var(--muted);
+}
+
+.duplicate-notice {
+  text-align: left;
+  padding: 20px;
+  border-radius: 16px;
+  background: rgba(255,180,80,.1);
+  border: 1px solid rgba(255,180,80,.25);
+  margin-bottom: 25px;
+}
+
+.duplicate-notice strong {
+  display: block;
+}
+
+.duplicate-notice p {
+  margin: 7px 0 0;
+  color: var(--muted);
+}
+
+
+/* DARK MODE */
+
+.dark-mode .report-page {
+  background: #0b1120;
+}
+
+.dark-mode .form-section,
+.dark-mode .success-card {
+  background: #111a2d;
+  border-color: #29364e;
+}
+
+.dark-mode .form-section input,
+.dark-mode .form-section textarea,
+.dark-mode .form-section select,
+.dark-mode .location-box,
+.dark-mode .severity-option {
+  background: #0f1728;
+  border-color: #29364e;
+  color: #f4f7fb;
+}
+
+.dark-mode .photo-input {
+  border-color: #334158;
+}
+
+.dark-mode .severity-option.selected {
+  background: rgba(56,214,193,.1);
+  border-color: var(--blue);
+}
+
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+
+  .report-container {
+    padding-top: 50px;
+  }
+
+  .form-section {
+    padding: 22px;
+    border-radius: 18px;
+  }
+
+  .form-section-heading {
+    gap: 12px;
+  }
+
+  .severity-options {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .theme-text {
+    display: none;
+  }
+
+}
