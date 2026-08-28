@@ -610,8 +610,12 @@ function Navbar({
    ISSUE CARD
 ========================= */
 
+
 function IssueCard({ issue, onSupported }) {
   const [supporting, setSupporting] = useState(false);
+  const [supported, setSupported] = useState(
+    issue.has_supported === true
+  );
   const [error, setError] = useState('');
 
   async function supportIssue() {
@@ -619,6 +623,10 @@ function IssueCard({ issue, onSupported }) {
 
     if (!token) {
       setError('Please log in to support an issue.');
+      return;
+    }
+
+    if (supported || supporting) {
       return;
     }
 
@@ -644,6 +652,8 @@ function IssueCard({ issue, onSupported }) {
         );
         return;
       }
+
+      setSupported(true);
 
       onSupported(issue.id, data);
 
@@ -695,16 +705,24 @@ function IssueCard({ issue, onSupported }) {
       </div>
 
       <button
-        className="support-btn"
+        className={`support-btn ${
+          supported ? 'supported' : ''
+        }`}
         onClick={supportIssue}
-        disabled={supporting}
+        disabled={supporting || supported}
       >
-        {supporting
-          ? 'Supporting...'
-          : "I'm affected by this"}
+        {supported
+          ? "You're supporting this"
+          : supporting
+            ? 'Supporting...'
+            : "I'm affected by this"}
 
         <span>
-          {supporting ? '...' : '↗'}
+          {supported
+            ? '✓'
+            : supporting
+              ? '...'
+              : '↗'}
         </span>
       </button>
 

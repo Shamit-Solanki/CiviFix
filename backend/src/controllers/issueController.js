@@ -1,26 +1,31 @@
 import { pool } from '../db.js';
 import { calculatePriority } from '../services/priorityService.js';
 
+/* =========================
+   LIST ISSUES
+========================= */
+
 export async function listIssues(req, res) {
   try {
-    const values = [];
-    const conditions = [];
+    const v = [];
+    const c = [];
 
     if (req.query.status) {
-      values.push(req.query.status);
-      conditions.push(`i.status = $${values.length}`);
+      v.push(req.query.status);
+      c.push(`i.status=$${v.length}`);
     }
 
     if (req.query.department) {
-      values.push(req.query.department);
-      conditions.push(`i.department_id = $${values.length}`);
+      v.push(req.query.department);
+      c.push(`i.department_id=$${v.length}`);
     }
 
-    const where = conditions.length
-      ? `WHERE ${conditions.join(' AND ')}`
-      : '';
+    const where = c.length ? `WHERE ${c.join(' AND ')}` : '';
 
-    const result = await pool.query(
+    const userId = req.user?.id || null;
+    const userParam = v.length + 1;
+
+    const r = await pool.query(
       `
       SELECT
         i.id,
@@ -33,33 +38,56 @@ export async function listIssues(req, res) {
         d.name AS department,
         ST_Y(i.location::geometry) AS latitude,
         ST_X(i.location::geometry) AS longitude,
-        COUNT(DISTINCT s.user_id)::int AS supporter_count
+        COUNT(DISTINCT s.user_id)::int AS supporter_count,
+
+        CASE
+          WHEN $${userParam}::bigint IS NULL THEN false
+          WHEN EXISTS (
+            SELECT 1
+            FROM issue_supporters us
+            WHERE us.issue_id = i.id
+              AND us.user_id = $${userParam}
+          )
+          THEN true
+          ELSE false
+        END AS has_supported
+
       FROM issues i
+
       LEFT JOIN departments d
         ON d.id = i.department_id
+
       LEFT JOIN issue_supporters s
         ON s.issue_id = i.id
+
       ${where}
-      GROUP BY
-        i.id,
-        d.name
+
+      GROUP BY i.id, d.name
+
       ORDER BY
         i.priority_score DESC,
         i.created_at DESC
       `,
-      values
+      [...v, userId]
     );
 
-    res.json({ issues: result.rows });
+    res.json({
+      issues: r.rows
+    });
 
-  } catch (error) {
-    console.error(error);
+  } catch (e) {
+    console.error(e);
+
     res.status(500).json({
       error: 'Could not load issues'
     });
   }
 }
 
+
+/* =========================
+   CREATE ISSUE
+========================= */
 
 export async function createIssue(req, res) {
   const client = await pool.connect();
@@ -77,19 +105,17 @@ export async function createIssue(req, res) {
 
     if (
       !title ||
-      departmentId == null ||
+      !departmentId ||
       latitude == null ||
       longitude == null
     ) {
       return res.status(400).json({
-        error:
-          'title, departmentId, latitude and longitude are required'
+        error: 'title, departmentId, latitude and longitude are required'
       });
     }
 
     await client.query('BEGIN');
 
-    // Verify department
     const department = await client.query(
       `
       SELECT id, name
@@ -103,13 +129,11 @@ export async function createIssue(req, res) {
       await client.query('ROLLBACK');
 
       return res.status(400).json({
-        error: 'Invalid department'
+        error: 'Invalid authority/department'
       });
     }
 
-    // Look for a nearby issue assigned to the same department.
-    // This does NOT automatically merge the reports.
-    const nearby = await client.query(
+    const duplicate = await client.query(
       `
       SELECT
         i.id,
@@ -121,7 +145,9 @@ export async function createIssue(req, res) {
             4326
           )::geography
         ) AS distance_m
+
       FROM issues i
+
       WHERE i.department_id = $3
         AND i.status NOT IN (
           'CLOSED',
@@ -136,13 +162,18 @@ export async function createIssue(req, res) {
           )::geography,
           100
         )
+
       ORDER BY distance_m
       LIMIT 1
       `,
-      [longitude, latitude, departmentId]
+      [
+        longitude,
+        latitude,
+        departmentId
+      ]
     );
 
-    const result = await client.query(
+    const issue = await client.query(
       `
       INSERT INTO issues (
         title,
@@ -152,6 +183,7 @@ export async function createIssue(req, res) {
         location,
         severity
       )
+
       VALUES (
         $1,
         $2,
@@ -163,15 +195,19 @@ export async function createIssue(req, res) {
         )::geography,
         $7
       )
+
       RETURNING
         id,
         title,
         description,
         department_id,
-        status,
+        reported_by,
+        location,
         severity,
+        status,
         priority_score,
-        created_at
+        created_at,
+        updated_at
       `,
       [
         title.trim(),
@@ -192,10 +228,11 @@ export async function createIssue(req, res) {
           image_url,
           uploaded_by
         )
+
         VALUES ($1, $2, $3)
         `,
         [
-          result.rows[0].id,
+          issue.rows[0].id,
           imageUrl,
           req.user.id
         ]
@@ -210,13 +247,19 @@ export async function createIssue(req, res) {
         changed_by,
         notes
       )
-      VALUES ($1, 'REPORTED', $2, $3)
+
+      VALUES (
+        $1,
+        'REPORTED',
+        $2,
+        $3
+      )
       `,
       [
-        result.rows[0].id,
+        issue.rows[0].id,
         req.user.id,
-        nearby.rows[0]
-          ? `Possible nearby related issue: #${nearby.rows[0].id}`
+        duplicate.rows[0]
+          ? `Possible nearby related issue: #${duplicate.rows[0].id}`
           : 'Issue reported'
       ]
     );
@@ -224,14 +267,14 @@ export async function createIssue(req, res) {
     await client.query('COMMIT');
 
     res.status(201).json({
-      issue: result.rows[0],
-      possibleDuplicate: nearby.rows[0] || null
+      issue: issue.rows[0],
+      possibleDuplicate: duplicate.rows[0] || null
     });
 
-  } catch (error) {
+  } catch (e) {
     await client.query('ROLLBACK');
 
-    console.error(error);
+    console.error(e);
 
     res.status(500).json({
       error: 'Could not create issue'
@@ -243,16 +286,45 @@ export async function createIssue(req, res) {
 }
 
 
+/* =========================
+   SUPPORT ISSUE
+========================= */
+
 export async function supportIssue(req, res) {
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
 
-    const issue = await client.query(
+    await client.query(
+      `
+      INSERT INTO issue_supporters (
+        issue_id,
+        user_id
+      )
+
+      VALUES ($1, $2)
+
+      ON CONFLICT DO NOTHING
+      `,
+      [
+        req.params.id,
+        req.user.id
+      ]
+    );
+
+    const c = await client.query(
+      `
+      SELECT COUNT(*)::int AS count
+      FROM issue_supporters
+      WHERE issue_id = $1
+      `,
+      [req.params.id]
+    );
+
+    const i = await client.query(
       `
       SELECT
-        id,
         severity,
         created_at
       FROM issues
@@ -262,7 +334,7 @@ export async function supportIssue(req, res) {
       [req.params.id]
     );
 
-    if (!issue.rows[0]) {
+    if (!i.rows[0]) {
       await client.query('ROLLBACK');
 
       return res.status(404).json({
@@ -270,34 +342,10 @@ export async function supportIssue(req, res) {
       });
     }
 
-    await client.query(
-      `
-      INSERT INTO issue_supporters (
-        issue_id,
-        user_id
-      )
-      VALUES ($1, $2)
-      ON CONFLICT DO NOTHING
-      `,
-      [
-        req.params.id,
-        req.user.id
-      ]
-    );
-
-    const supporters = await client.query(
-      `
-      SELECT COUNT(*)::int AS count
-      FROM issue_supporters
-      WHERE issue_id = $1
-      `,
-      [req.params.id]
-    );
-
     const priority = calculatePriority({
-      severity: issue.rows[0].severity,
-      supporters: supporters.rows[0].count,
-      createdAt: issue.rows[0].created_at
+      severity: i.rows[0].severity,
+      supporters: c.rows[0].count,
+      createdAt: i.rows[0].created_at
     });
 
     await client.query(
@@ -317,14 +365,14 @@ export async function supportIssue(req, res) {
     await client.query('COMMIT');
 
     res.json({
-      supporterCount: supporters.rows[0].count,
+      supporterCount: c.rows[0].count,
       priorityScore: priority
     });
 
-  } catch (error) {
+  } catch (e) {
     await client.query('ROLLBACK');
 
-    console.error(error);
+    console.error(e);
 
     res.status(500).json({
       error: 'Could not support issue'
